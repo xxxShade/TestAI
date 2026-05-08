@@ -59,15 +59,28 @@
     width: 100%;
     position: relative;
     display: flex;
-    justify-content: flex-end;
+    justify-content: flex-start;
     align-items: center;
-    padding-right: 4px;
-    cursor: grab;
+    padding-left: 4px;
     background: rgba(0, 0, 0, 0.4);
   }
 
-  .window-header:active {
+  .drag-handle {
+    display: flex;
+    gap: 2px;
+    cursor: grab;
+    padding: 2px 4px;
+  }
+
+  .drag-handle:active {
     cursor: grabbing;
+  }
+
+  .drag-handle-line {
+    width: 2px;
+    height: 6px;
+    background: rgba(255, 255, 255, 0.5);
+    border-radius: 1px;
   }
 
   .header-button {
@@ -242,6 +255,11 @@
       
       <!-- Header - spans full width of white border -->
       <div class="window-header" id="windowHeader">
+        <div class="drag-handle" id="dragHandle">
+          <div class="drag-handle-line"></div>
+          <div class="drag-handle-line"></div>
+          <div class="drag-handle-line"></div>
+        </div>
         <div class="header-button"></div>
       </div>
       
@@ -375,7 +393,9 @@
 
   // Draggable Window (Header)
   let isDragging = false;
-  windowHeader.addEventListener('mousedown', (e) => {
+  const dragHandle = document.getElementById('dragHandle');
+  
+  dragHandle.addEventListener('mousedown', (e) => {
     isDragging = true;
     e.preventDefault();
   });
