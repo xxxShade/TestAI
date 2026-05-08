@@ -67,8 +67,9 @@
 
   .drag-handle {
     display: flex;
-    align-items: center;
-    gap: 4px;
+    flex-direction: column;
+    justify-content: center;
+    gap: 1px;
     cursor: grab;
     padding-left: 10px;
     flex-grow: 1;
@@ -79,10 +80,9 @@
   }
 
   .drag-handle-line {
-    width: 16px;
+    width: 10px;
     height: 1px;
     background: rgba(255, 255, 255, 0.6);
-    border-radius: 1px;
   }
 
   .header-button {
