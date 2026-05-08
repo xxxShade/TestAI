@@ -316,7 +316,10 @@
   let indicatorTimeout = null;
 
   function applyTransform() {
-    zoomLayer.style.transform = `translate3d(${Math.round(panX)}px, ${Math.round(panY)}px, 0) scale(${currentZoom})`;
+    // Округляем до ближайшего значения кратного 4 для предотвращения размытия
+    const snapX = Math.round(panX / 4) * 4;
+    const snapY = Math.round(panY / 4) * 4;
+    zoomLayer.style.transform = `translate3d(${snapX}px, ${snapY}px, 0) scale(${currentZoom})`;
   }
 
   function setZoom(newZoom) {
@@ -379,8 +382,8 @@
 
   window.addEventListener('mousemove', (e) => {
     if (isDragging) {
-      panX = Math.round(panX + e.movementX);
-      panY = Math.round(panY + e.movementY);
+      panX += e.movementX;
+      panY += e.movementY;
       applyTransform();
     }
   });
@@ -416,8 +419,8 @@
       const mid = { x: (t1.clientX + t2.clientX) / 2, y: (t1.clientY + t2.clientY) / 2 };
 
       currentZoom = Math.max(minZoom, Math.min(maxZoom, touchStartZoom * (dist / touchStartDist)));
-      panX = Math.round(touchStartPan.x + (mid.x - touchStartMid.x));
-      panY = Math.round(touchStartPan.y + (mid.y - touchStartMid.y));
+      panX = touchStartPan.x + (mid.x - touchStartMid.x);
+      panY = touchStartPan.y + (mid.y - touchStartMid.y);
       applyTransform();
     }
   }, { passive: false });
