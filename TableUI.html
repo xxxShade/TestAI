@@ -333,11 +333,33 @@
   const minZoom = 0.3, maxZoom = 3;
   let indicatorTimeout = null;
 
+  // Загрузка сохраненной позиции и зума
+  function loadState() {
+    const savedState = localStorage.getItem('windowState');
+    if (savedState) {
+      try {
+        const state = JSON.parse(savedState);
+        panX = state.panX || 0;
+        panY = state.panY || 0;
+        currentZoom = state.currentZoom || 1;
+      } catch (e) {
+        console.error('Ошибка загрузки состояния:', e);
+      }
+    }
+  }
+
+  // Сохранение позиции и зума
+  function saveState() {
+    const state = { panX, panY, currentZoom };
+    localStorage.setItem('windowState', JSON.stringify(state));
+  }
+
   function applyTransform() {
     // Округляем до ближайшего значения кратного 4 для предотвращения размытия
     const snapX = Math.round(panX / 4) * 4;
     const snapY = Math.round(panY / 4) * 4;
     zoomLayer.style.transform = `translate3d(${snapX}px, ${snapY}px, 0) scale(${currentZoom})`;
+    saveState();
   }
 
   function setZoom(newZoom) {
@@ -363,6 +385,10 @@
     applyTransform(); 
     showIndicator(100); 
   });
+
+  // Загрузка состояния при инициализации
+  loadState();
+  applyTransform();
 
   // Wheel Zoom (Ctrl + Scroll)
   let wheelAccum = 0;
