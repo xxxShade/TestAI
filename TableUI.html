@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Table UI</title>
+<style>
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  body {
+    background-color: #1a0e08;
+    background-image: url('https://image.qwenlm.ai/public_source/58fe8d51-6680-46ae-8f7c-8a2b0414d0a4/160b7eb81-0a84-4c43-aa2d-385e6ece9ab7.png');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    overflow: hidden;
+  }
+
+  .zoom-layer {
+    transform-origin: center center;
+    will-change: transform;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  /* 1. Outer 1px transparent light-black border */
+  .window {
+    border: 1px solid rgba(0, 0, 0, 0.4);
+    background: rgba(0, 0, 0, 0.1);
+    position: relative;
+  }
+
+  /* 2. 1px white border */
+  .window-border-white {
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    background: transparent;
+    width: 480px;
+  }
+
+  /* Header - inside white border, full width */
+  .window-header {
+    height: 10px;
+    width: 100%;
+    position: relative;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    padding-right: 4px;
+    cursor: grab;
+    background: rgba(0, 0, 0, 0.4);
+  }
+
+  .window-header:active {
+    cursor: grabbing;
+  }
+
+  .header-button {
+    width: 8px;
+    height: 8px;
+    background: rgb(0 0 0 / 30%);
+    border-radius: 50%;
+    border: 1px solid rgb(255 255 255 / 32%);
+  }
+
+  /* Separator line - full width of white border, overlapping sides */
+  .header-line {
+    height: 1px;
+    width: 100%;
+    background: rgba(255, 255, 255, 0.8);
+  }
+
+  /* 3. Transparent light-black padding border: 8px top, 4px sides, 4px bottom */
+  .window-border-shadow {
+    border-style: solid;
+    border-color: rgba(0, 0, 0, 0.35);
+    border-width: 4px 4px 4px 4px;
+    background: transparent;
+  }
+
+  /* 4. 1px transparent black border */
+  .window-border-black {
+    border: 1px solid rgba(0, 0, 0, 0.65);
+    background: transparent;
+  }
+
+  /* 5. Content block */
+  .content {
+    background: rgba(40, 22, 14, 0.85);
+    backdrop-filter: blur(2px);
+    position: relative;
+  }
+
+  /* Table Styling */
+  .table-wrapper {
+    height: 420px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    position: relative;
+    z-index: 2;
+  }
+
+  .table-wrapper::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .table-wrapper::-webkit-scrollbar-track {
+    background: rgba(40, 22, 14, 0.5);
+  }
+
+  .table-wrapper::-webkit-scrollbar-thumb {
+    background: rgba(139, 90, 56, 0.5);
+    border-radius: 3px;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+  }
+
+  colgroup col:nth-child(1) { width: 25%; }
+  colgroup col:nth-child(2) { width: 18%; }
+  colgroup col:nth-child(3) { width: 20%; }
+  colgroup col:nth-child(4) { width: 12%; }
+  colgroup col:nth-child(5) { width: 12%; }
+  colgroup col:nth-child(6) { width: 13%; }
+
+  thead th {
+    background: rgba(60, 35, 22, 0.95);
+    color: #b89a78;
+    font-size: 11px;
+    font-weight: 500;
+    text-align: center;
+    padding: 6px 2px;
+    border: 1px solid rgba(139, 90, 56, 0.4);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    letter-spacing: 0.3px;
+    position: sticky;
+    top: 0;
+    z-index: 3;
+  }
+
+  thead th:first-child { border-left: none; }
+  thead th:last-child { border-right: none; }
+
+  tbody tr { transition: background 0.1s; }
+  tbody tr:not(.selected):hover { background: rgba(139, 90, 56, 0.12); }
+  tbody tr.selected { background: rgba(100, 75, 55, 0.55); }
+
+  tbody td {
+    color: #c4a882;
+    font-size: 11px;
+    text-align: center;
+    padding: 4px 2px;
+    border-right: 1px solid rgba(139, 90, 56, 0.2);
+    border-bottom: 1px solid rgba(139, 90, 56, 0.15);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    letter-spacing: 0.2px;
+  }
+
+  tbody td:first-child { border-left: 1px solid rgba(139, 90, 56, 0.2); }
+  tbody tr:last-child td { border-bottom: none; }
+
+  /* UI Controls */
+  .zoom-indicator {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: rgba(40, 22, 14, 0.85);
+    border: 1px solid rgba(139, 90, 56, 0.5);
+    color: #b89a78;
+    font-size: 12px;
+    padding: 6px 14px;
+    border-radius: 4px;
+    z-index: 100;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  .zoom-indicator.visible { opacity: 1; }
+
+  .zoom-controls {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    display: flex;
+    gap: 4px;
+    z-index: 100;
+  }
+
+  .zoom-btn {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(40, 22, 14, 0.85);
+    border: 1px solid rgba(139, 90, 56, 0.5);
+    color: #b89a78;
+    font-size: 16px;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: background 0.15s;
+    user-select: none;
+  }
+  .zoom-btn:hover { background: rgba(100, 75, 55, 0.55); }
+  .zoom-btn:active { background: rgba(139, 90, 56, 0.55); }
+</style>
+</head>
+<body>
+
+<div class="zoom-layer" id="zoomLayer">
+  <div class="window">
+    <div class="window-border-white">
+      
+      <!-- Header - spans full width of white border -->
+      <div class="window-header" id="windowHeader">
+        <div class="header-button"></div>
+      </div>
+      
+      <!-- Separator line - extends to white border edges -->
+      <div class="header-line"></div>
+      
+      <!-- Nested border layers -->
+      <div class="window-border-shadow">
+        <div class="window-border-black">
+          <div class="content">
+            <div class="table-wrapper">
+              <table>
+                <colgroup>
+                  <col><col><col><col><col><col>
+                </colgroup>
+                <thead>
+                  <tr>
+                    <th>Text Block</th>
+                    <th>1123456</th>
+                    <th>Text Block</th>
+                    <th>123</th>
+                    <th>123</th>
+                    <th>13</th>
+                  </tr>
+                </thead>
+                <tbody id="tableBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+    </div>
+  </div>
+</div>
+
+<div class="zoom-controls">
+  <button class="zoom-btn" id="zoomIn" title="Увеличить">+</button>
+  <button class="zoom-btn" id="zoomOut" title="Уменьшить">−</button>
+  <button class="zoom-btn" id="zoomReset" title="Сбросить" style="font-size:12px;">1:1</button>
+</div>
+
+<div class="zoom-indicator" id="zoomIndicator">100%</div>
+
+<script>
+  const tableBody = document.getElementById('tableBody');
+  const zoomLayer = document.getElementById('zoomLayer');
+  const zoomIndicator = document.getElementById('zoomIndicator');
+  const windowHeader = document.getElementById('windowHeader');
+  const btnIn = document.getElementById('zoomIn');
+  const btnOut = document.getElementById('zoomOut');
+  const btnReset = document.getElementById('zoomReset');
+
+  // Table generation
+  const totalRows = 14;
+  const selectedRow = 1;
+  for (let i = 0; i < totalRows; i++) {
+    const tr = document.createElement('tr');
+    if (i === selectedRow) tr.classList.add('selected');
+    ['Text Block', '1123456', 'Text Block', '123', '123', '13'].forEach(text => {
+      const td = document.createElement('td');
+      td.textContent = text;
+      tr.appendChild(td);
+    });
+    tableBody.appendChild(tr);
+  }
+
+  // Zoom & Pan State
+  let currentZoom = 1;
+  let panX = 0, panY = 0;
+  const minZoom = 0.3, maxZoom = 3;
+  let indicatorTimeout = null;
+
+  function applyTransform() {
+    zoomLayer.style.transform = `translate(${panX}px, ${panY}px) scale(${currentZoom})`;
+  }
+
+  function setZoom(newZoom) {
+    currentZoom = Math.max(minZoom, Math.min(maxZoom, newZoom));
+    applyTransform();
+    showIndicator(Math.round(currentZoom * 100));
+  }
+
+  function showIndicator(value) {
+    zoomIndicator.textContent = value + '%';
+    zoomIndicator.classList.add('visible');
+    clearTimeout(indicatorTimeout);
+    indicatorTimeout = setTimeout(() => zoomIndicator.classList.remove('visible'), 800);
+  }
+
+  // Zoom Buttons
+  btnIn.addEventListener('click', () => setZoom(currentZoom + 0.1));
+  btnOut.addEventListener('click', () => setZoom(currentZoom - 0.1));
+  btnReset.addEventListener('click', () => { 
+    currentZoom = 1; 
+    panX = 0; 
+    panY = 0; 
+    applyTransform(); 
+    showIndicator(100); 
+  });
+
+  // Wheel Zoom (Ctrl + Scroll)
+  let wheelAccum = 0;
+  window.addEventListener('wheel', (e) => {
+    if (e.ctrlKey) {
+      e.preventDefault();
+      wheelAccum += e.deltaY;
+      if (Math.abs(wheelAccum) >= 30) {
+        setZoom(currentZoom + (wheelAccum > 0 ? -0.05 : 0.05));
+        wheelAccum = 0;
+      }
+    }
+  }, { passive: false });
+
+  // Keyboard Zoom
+  window.addEventListener('keydown', (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key === '=') { e.preventDefault(); setZoom(currentZoom + 0.1); }
+    else if ((e.ctrlKey || e.metaKey) && e.key === '-') { e.preventDefault(); setZoom(currentZoom - 0.1); }
+    else if ((e.ctrlKey || e.metaKey) && e.key === '0') { 
+      e.preventDefault(); 
+      currentZoom = 1; 
+      panX = 0; 
+      panY = 0; 
+      applyTransform(); 
+      showIndicator(100); 
+    }
+  });
+
+  // Draggable Window (Header)
+  let isDragging = false;
+  windowHeader.addEventListener('mousedown', (e) => {
+    isDragging = true;
+    e.preventDefault();
+  });
+
+  window.addEventListener('mousemove', (e) => {
+    if (isDragging) {
+      panX += e.movementX;
+      panY += e.movementY;
+      applyTransform();
+    }
+  });
+
+  window.addEventListener('mouseup', () => {
+    isDragging = false;
+  });
+
+  // Two-Finger Pan & Pinch Zoom (Touch)
+  let isTouchActive = false;
+  let touchStartDist = 0;
+  let touchStartZoom = 1;
+  let touchStartMid = { x: 0, y: 0 };
+  let touchStartPan = { x: 0, y: 0 };
+
+  window.addEventListener('touchstart', (e) => {
+    if (e.touches.length === 2) {
+      e.preventDefault();
+      isTouchActive = true;
+      const t1 = e.touches[0], t2 = e.touches[1];
+      touchStartDist = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
+      touchStartMid = { x: (t1.clientX + t2.clientX) / 2, y: (t1.clientY + t2.clientY) / 2 };
+      touchStartZoom = currentZoom;
+      touchStartPan = { x: panX, y: panY };
+    }
+  }, { passive: false });
+
+  window.addEventListener('touchmove', (e) => {
+    if (isTouchActive && e.touches.length === 2) {
+      e.preventDefault();
+      const t1 = e.touches[0], t2 = e.touches[1];
+      const dist = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
+      const mid = { x: (t1.clientX + t2.clientX) / 2, y: (t1.clientY + t2.clientY) / 2 };
+
+      currentZoom = Math.max(minZoom, Math.min(maxZoom, touchStartZoom * (dist / touchStartDist)));
+      panX = touchStartPan.x + (mid.x - touchStartMid.x);
+      panY = touchStartPan.y + (mid.y - touchStartMid.y);
+      applyTransform();
+    }
+  }, { passive: false });
+
+  window.addEventListener('touchend', (e) => {
+    if (e.touches.length < 2) isTouchActive = false;
+  });
+</script>
+
+</body>
+</html>
+
