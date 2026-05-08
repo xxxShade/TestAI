@@ -67,9 +67,11 @@
 
   .drag-handle {
     display: flex;
-    gap: 2px;
+    align-items: center;
+    gap: 4px;
     cursor: grab;
-    padding: 2px 4px;
+    padding-left: 10px;
+    flex-grow: 1;
   }
 
   .drag-handle:active {
@@ -77,9 +79,9 @@
   }
 
   .drag-handle-line {
-    width: 2px;
-    height: 6px;
-    background: rgba(255, 255, 255, 0.5);
+    width: 16px;
+    height: 1px;
+    background: rgba(255, 255, 255, 0.6);
     border-radius: 1px;
   }
 
@@ -89,6 +91,7 @@
     background: rgb(0 0 0 / 30%);
     border-radius: 50%;
     border: 1px solid rgb(255 255 255 / 32%);
+    margin-right: 10px;
   }
 
   /* Separator line - full width of white border, overlapping sides */
