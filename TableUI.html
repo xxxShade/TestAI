@@ -63,6 +63,8 @@
     align-items: center;
     padding-left: 2px;
     background: rgba(0, 0, 0, 0.4);
+    user-select: none;
+    -webkit-user-select: none;
   }
 
   .drag-handle {
@@ -72,7 +74,8 @@
     gap: 1px;
     cursor: grab;
     padding-left: 4px;
-    flex-grow: 1;
+    user-select: none;
+    -webkit-user-select: none;
   }
 
   .drag-handle:active {
@@ -92,6 +95,7 @@
     border-radius: 50%;
     border: 1px solid rgb(255 255 255 / 32%);
     margin-right: 4px;
+    cursor: default;
   }
 
   /* Separator line - full width of white border, overlapping sides */
@@ -423,7 +427,12 @@
   // Draggable Window (Header)
   let isDragging = false;
   const dragHandle = document.getElementById('dragHandle');
+  let touchStartX = 0;
+  let touchStartY = 0;
+  let panStartX = 0;
+  let panStartY = 0;
   
+  // Mouse events
   dragHandle.addEventListener('mousedown', (e) => {
     isDragging = true;
     e.preventDefault();
@@ -438,6 +447,35 @@
   });
 
   window.addEventListener('mouseup', () => {
+    isDragging = false;
+  });
+
+  // Touch events for dragging
+  dragHandle.addEventListener('touchstart', (e) => {
+    if (e.touches.length === 1) {
+      isDragging = true;
+      const touch = e.touches[0];
+      touchStartX = touch.clientX;
+      touchStartY = touch.clientY;
+      panStartX = panX;
+      panStartY = panY;
+      e.preventDefault();
+    }
+  }, { passive: false });
+
+  window.addEventListener('touchmove', (e) => {
+    if (isDragging && e.touches.length === 1) {
+      const touch = e.touches[0];
+      const deltaX = touch.clientX - touchStartX;
+      const deltaY = touch.clientY - touchStartY;
+      panX = panStartX + deltaX;
+      panY = panStartY + deltaY;
+      applyTransform();
+      e.preventDefault();
+    }
+  }, { passive: false });
+
+  window.addEventListener('touchend', () => {
     isDragging = false;
   });
 
